@@ -1,0 +1,7 @@
+{
+  "name": "claude-tts",
+  "type": "module",
+  "dependencies": {
+    "kokoro-js": "^1.2.1"
+  }
+}
