@@ -49,9 +49,17 @@ To override voice or speed inline:
 "command": "jq -r '.last_assistant_message // empty' | KOKORO_VOICE=bm_george KOKORO_SPEED=1.0 bun run /path/to/claude-tts/tts.js"
 ```
 
+## Summarization
+
+Replies over 300 characters are first condensed to one or two short sentences (under 40 words, hard-capped at 300 characters) by a headless `claude -p` call (Haiku by default). This reuses your Claude Code login, so no API key is needed. It adds a few seconds of latency before speech starts. If the call fails, the full text is read instead and the error goes to stderr. Set `KOKORO_SUMMARIZE=0` to read everything verbatim.
+
+Because the summary is short, it is synthesized in a single pass and plays as one gapless clip. Kokoro silently truncates past ~510 phoneme tokens, hence the hard cap. Text that is still over 400 characters after cleaning (summary off or failed) falls back to paragraph-by-paragraph streaming.
+
+The child `claude` runs with hooks disabled and `TTS_SUMMARIZING=1` set, so its own Stop hook cannot re-trigger this script.
+
 ## How it works
 
-**Chunking and streaming playback**: Long messages are split on double newlines (paragraphs) and each paragraph is synthesized and played in sequence using `TextSplitterStream`. Audio starts playing as the first paragraph is synthesized rather than waiting for the whole message — this keeps latency low for long responses.
+**Chunking and streaming playback** (only when text is not summarized): Long messages are split on double newlines (paragraphs) and each paragraph is synthesized and played in sequence using `TextSplitterStream`. Audio starts playing as the first paragraph is synthesized rather than waiting for the whole message — this keeps latency low for long responses.
 
 **Text cleaning before synthesis**:
 - Code blocks (` ``` ... ``` `) are replaced with ", code block," so they're acknowledged but not read verbatim
@@ -73,6 +81,8 @@ To override voice or speed inline:
 |----------|---------|-------------|
 | `KOKORO_VOICE` | `af_heart` | Voice to use (see below) |
 | `KOKORO_SPEED` | `1.3` | Speed multiplier — 0.5 (slow) to 2.0 (fast) |
+| `KOKORO_SUMMARIZE` | on | Set to `0` to skip summarization |
+| `KOKORO_SUMMARY_MODEL` | `haiku` | Model passed to `claude -p --model` |
 
 ## Voices
 
