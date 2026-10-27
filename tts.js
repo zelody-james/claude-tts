@@ -51,8 +51,11 @@ async function summarize(text) {
   try {
     const proc = Bun.spawn(
       ["claude", "-p", "--model", SUMMARY_MODEL, "--no-session-persistence",
+       // The reply may carry injected instructions, so the summarizer gets no tools, no user/project
+       // settings (permission allowlists) and an empty cwd; hooks stay off to skip slow startup hooks.
+       "--tools", "", "--setting-sources", "", "--disable-slash-commands",
        "--settings", '{"disableAllHooks":true}', "--system-prompt", SUMMARY_PROMPT],
-      { stdin: new Blob([text]), stdout: "pipe", stderr: "pipe", env: { ...process.env, TTS_SUMMARIZING: "1" } },
+      { cwd: tmpdir(), stdin: new Blob([text]), stdout: "pipe", stderr: "pipe", env: { ...process.env, TTS_SUMMARIZING: "1" } },
     );
     const [out, err, code] = await Promise.all([
       new Response(proc.stdout).text(), new Response(proc.stderr).text(), proc.exited,
