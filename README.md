@@ -43,6 +43,8 @@ Add this to `~/.claude/settings.json` to read Claude's last response aloud after
 }
 ```
 
+The hook is `async` so playback never blocks the next prompt, and it is skipped while `~/.claude/tts-off` exists. Flip it with `./toggle.sh` (creates or removes that file).
+
 To override voice or speed inline:
 
 ```json
